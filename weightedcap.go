@@ -21,11 +21,17 @@ type Cap interface {
 }
 
 func New(capacity int64) *weightedCap {
-	return &weightedCap{
+	cap := &weightedCap{
 		maxCapacity: capacity,
 		capacity:    capacity,
-		signal:      make(chan struct{}, 1),
+		signal:      make(chan struct{}, capacity),
 	}
+
+	for i := 0; i < int(capacity); i++ {
+		cap.signal <- struct{}{}
+	}
+
+	return cap
 }
 
 func (w *weightedCap) Consume(ctx context.Context, n int64) error {
@@ -33,6 +39,10 @@ func (w *weightedCap) Consume(ctx context.Context, n int64) error {
 		return &ExceedingCapacityErr{n, w.maxCapacity}
 	}
 	if atomic.LoadInt64(&w.capacity) >= n {
+		w.signalMu.Lock()
+		defer w.signalMu.Unlock()
+
+		<-w.signal
 		w.consume(ctx, n)
 		return nil
 	}
@@ -66,10 +76,7 @@ func (w *weightedCap) consume(ctx context.Context, n int64) {
 
 func (w *weightedCap) Release(n int64) {
 	atomic.AddInt64(&w.capacity, n)
-	select {
-	case w.signal <- struct{}{}:
-	default:
-	}
+	w.signal <- struct{}{}
 }
 
 type ExceedingCapacityErr struct {
