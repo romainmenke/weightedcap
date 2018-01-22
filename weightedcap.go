@@ -15,6 +15,11 @@ type weightedCap struct {
 	signal   chan struct{}
 }
 
+type Cap interface {
+	Release(n int64)
+	Consume(ctx context.Context, n int64) error
+}
+
 func New(capacity int64) *weightedCap {
 	return &weightedCap{
 		maxCapacity: capacity,
