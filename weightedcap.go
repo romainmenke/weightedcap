@@ -23,12 +23,12 @@ func New(capacity int64) *weightedCap {
 	}
 }
 
-func (w *weightedCap) Push(ctx context.Context, n int64) error {
+func (w *weightedCap) Consume(ctx context.Context, n int64) error {
 	if n > w.maxCapacity {
 		return &ExceedingCapacityErr{n, w.maxCapacity}
 	}
 	if atomic.LoadInt64(&w.capacity) >= n {
-		w.push(ctx, n)
+		w.consume(ctx, n)
 		return nil
 	}
 
@@ -42,7 +42,7 @@ func (w *weightedCap) Push(ctx context.Context, n int64) error {
 		}
 	}
 
-	w.push(ctx, n)
+	w.consume(ctx, n)
 	return nil
 }
 
@@ -55,11 +55,11 @@ func (w *weightedCap) waitForSignalLocked(ctx context.Context) error {
 	}
 }
 
-func (w *weightedCap) push(ctx context.Context, n int64) {
+func (w *weightedCap) consume(ctx context.Context, n int64) {
 	atomic.AddInt64(&w.capacity, -n)
 }
 
-func (w *weightedCap) Pop(n int64) {
+func (w *weightedCap) Release(n int64) {
 	atomic.AddInt64(&w.capacity, n)
 	w.signal <- struct{}{}
 }

@@ -5,7 +5,7 @@
 
 This pkg is useful if you like semaphores but you have heterogynous jobs.
 
-A simple example is a process that uses a significant amount of memory but not the same amount each time. If an estimate of memory usage is possible you can use this pkg to give a weight to each job. `Push` will block until enough capacity is available.
+A simple example is a process that uses a significant amount of memory but not the same amount each time. If an estimate of memory usage is possible you can use this pkg to give a weight to each job. `Consume(ctx, n)` will block until enough capacity is available or ctx is done.
 
 -----
 
@@ -27,18 +27,18 @@ defer func() { <-sema }()
 weightedcap:
 
 ```go
-// use new to make a new capacity "manager"
+// use "New" to create a new capacity "manager"
 cap := weightedcap.New(3)
 
 // works with context.Context for timeouts and cancels.
 ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*5)
 defer cancel()
 
-// Request N capacity with "Push"
-err := cap.Push(ctx, 1)
+// Request N capacity with "Consume"
+err := cap.Consume(ctx, 1)
 if err != nil {
 	t.Fatal(err)
 }
-// Free up N capacity with "Pop"
-defer cap.Pop(1)
+// Free up N capacity with "Release"
+defer cap.Release(1)
 ```

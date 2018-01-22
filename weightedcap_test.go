@@ -16,11 +16,11 @@ func TestPushPop_NoLoad(t *testing.T) {
 	defer cancel()
 
 	// no load test at max capacity
-	err := cap.Push(ctx, 3)
+	err := cap.Consume(ctx, 3)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cap.Pop(3)
+	defer cap.Release(3)
 }
 
 func TestPushPop_Load(t *testing.T) {
@@ -31,7 +31,7 @@ func TestPushPop_Load(t *testing.T) {
 
 	// add some load
 	{
-		err := cap.Push(ctx, 2)
+		err := cap.Consume(ctx, 2)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -40,16 +40,16 @@ func TestPushPop_Load(t *testing.T) {
 	// release load after some time on other goroutine
 	go func() {
 		time.Sleep(time.Millisecond * 5)
-		cap.Pop(2)
+		cap.Release(2)
 	}()
 
 	// attempt to add more load
 	{
-		err := cap.Push(ctx, 2)
+		err := cap.Consume(ctx, 2)
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer cap.Pop(2)
+		defer cap.Release(2)
 	}
 }
 
@@ -63,7 +63,7 @@ func TestPushPop_Timeout(t *testing.T) {
 
 	// plenty of capacity, so will not block and Push will succeed.
 	{
-		err := cap.Push(ctx, 2)
+		err := cap.Consume(ctx, 2)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -71,7 +71,7 @@ func TestPushPop_Timeout(t *testing.T) {
 
 	// not enough capacity and timeout happened, must return error.
 	{
-		err := cap.Push(ctx, 2)
+		err := cap.Consume(ctx, 2)
 		if err != ctx.Err() {
 			t.Fatal(fmt.Sprintf("expected ctx err, got : %v", err))
 		}
@@ -85,7 +85,7 @@ func TestPushPop_NegativeCap(t *testing.T) {
 	defer cancel()
 
 	expectedErr := &weightedcap.ExceedingCapacityErr{5, 3}
-	err := cap.Push(ctx, 5)
+	err := cap.Consume(ctx, 5)
 	if err.Error() != expectedErr.Error() {
 		t.Fatal(fmt.Sprintf("expected : %v, got : %v", expectedErr, err))
 	}
