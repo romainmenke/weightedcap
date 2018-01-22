@@ -66,7 +66,10 @@ func (w *weightedCap) consume(ctx context.Context, n int64) {
 
 func (w *weightedCap) Release(n int64) {
 	atomic.AddInt64(&w.capacity, n)
-	w.signal <- struct{}{}
+	select {
+	case w.signal <- struct{}{}:
+	default:
+	}
 }
 
 type ExceedingCapacityErr struct {

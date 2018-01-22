@@ -9,7 +9,7 @@ import (
 	"github.com/romainmenke/weightedcap"
 )
 
-func TestPushPop_NoLoad(t *testing.T) {
+func TestConsumeRelease_NoLoad(t *testing.T) {
 	cap := weightedcap.New(3)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*5)
@@ -23,25 +23,25 @@ func TestPushPop_NoLoad(t *testing.T) {
 	defer cap.Release(3)
 }
 
-func TestPushPop_Load(t *testing.T) {
+func TestConsumeRelease_Load(t *testing.T) {
 	cap := weightedcap.New(3)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*10)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
 	defer cancel()
 
-	// add some load
-	{
-		err := cap.Consume(ctx, 2)
+	for i := 0; i < 10; i++ {
+		// add some load
+		err := cap.Consume(ctx, 1)
 		if err != nil {
 			t.Fatal(err)
 		}
-	}
 
-	// release load after some time on other goroutine
-	go func() {
-		time.Sleep(time.Millisecond * 5)
-		cap.Release(2)
-	}()
+		// release load after some time on other goroutine
+		go func() {
+			time.Sleep(time.Millisecond * 5)
+			cap.Release(1)
+		}()
+	}
 
 	// attempt to add more load
 	{
@@ -53,7 +53,7 @@ func TestPushPop_Load(t *testing.T) {
 	}
 }
 
-func TestPushPop_Timeout(t *testing.T) {
+func TestConsumeRelease_Timeout(t *testing.T) {
 	cap := weightedcap.New(3)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*1)
@@ -78,7 +78,7 @@ func TestPushPop_Timeout(t *testing.T) {
 	}
 }
 
-func TestPushPop_NegativeCap(t *testing.T) {
+func TestConsumeRelease_NegativeCap(t *testing.T) {
 	cap := weightedcap.New(3)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*1)
