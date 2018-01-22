@@ -3,7 +3,7 @@
 `$ go get -u github.com/romainmenke/weightedcap`
 
 
-This pkg is useful if you like semaphores but you have heterogynous jobs.
+This pkg is useful if you like semaphores but you have heterogeneous jobs.
 
 A simple example is a process that uses a significant amount of memory but not the same amount each time. If an estimate of memory usage is possible you can use this pkg to give a weight to each job. `Consume(ctx, n)` will block until enough capacity is available or ctx is done.
 
