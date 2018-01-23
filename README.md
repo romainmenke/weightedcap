@@ -35,10 +35,10 @@ ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*5)
 defer cancel()
 
 // Request N capacity with "Consume"
-err := cap.Consume(ctx, 1)
+release, err := cap.Consume(ctx, 1)
 if err != nil {
 	t.Fatal(err)
 }
-// Free up N capacity with "Release"
-defer cap.Release(1)
+// Free up N capacity with "release"
+defer release()
 ```

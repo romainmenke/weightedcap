@@ -16,11 +16,11 @@ func TestConsumeRelease_NoLoad(t *testing.T) {
 	defer cancel()
 
 	// no load test at max capacity
-	err := cap.Consume(ctx, 3)
+	release, err := cap.Consume(ctx, 3)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cap.Release(3)
+	defer release()
 }
 
 func TestConsumeRelease_Load(t *testing.T) {
@@ -31,7 +31,7 @@ func TestConsumeRelease_Load(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		// add some load
-		err := cap.Consume(ctx, 1)
+		release, err := cap.Consume(ctx, 1)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -39,17 +39,17 @@ func TestConsumeRelease_Load(t *testing.T) {
 		// release load after some time on other goroutine
 		go func() {
 			time.Sleep(time.Millisecond * 5)
-			cap.Release(1)
+			release()
 		}()
 	}
 
 	// attempt to add more load
 	{
-		err := cap.Consume(ctx, 2)
+		release, err := cap.Consume(ctx, 2)
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer cap.Release(2)
+		defer release()
 	}
 }
 
@@ -63,7 +63,7 @@ func TestConsumeRelease_Timeout(t *testing.T) {
 
 	// plenty of capacity, so will not block and Push will succeed.
 	{
-		err := cap.Consume(ctx, 2)
+		_, err := cap.Consume(ctx, 2)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -71,7 +71,7 @@ func TestConsumeRelease_Timeout(t *testing.T) {
 
 	// not enough capacity and timeout happened, must return error.
 	{
-		err := cap.Consume(ctx, 2)
+		_, err := cap.Consume(ctx, 2)
 		if err != ctx.Err() {
 			t.Fatal(fmt.Sprintf("expected ctx err, got : %v", err))
 		}
@@ -85,7 +85,7 @@ func TestConsumeRelease_NegativeCap(t *testing.T) {
 	defer cancel()
 
 	expectedErr := &weightedcap.ExceedingCapacityErr{5, 3}
-	err := cap.Consume(ctx, 5)
+	_, err := cap.Consume(ctx, 5)
 	if err.Error() != expectedErr.Error() {
 		t.Fatal(fmt.Sprintf("expected : %v, got : %v", expectedErr, err))
 	}
